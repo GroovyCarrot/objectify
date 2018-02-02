@@ -7,7 +7,7 @@
  * namespace of Drupal extensions. Forms are exposed to the form API via their
  * class name, or the id defined by FormBuilderInterface::formId().
  *
- * @see \Drupal\objectify\Form\FormBuilderInterface
+ * @see \Drupal\objectify_form\FormBuilderInterface
  */
 
 namespace Drupal\objectify_form;

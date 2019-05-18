@@ -22,16 +22,6 @@ class FormAlterPluginLoader extends FormPluginLoader {
   /**
    * {@inheritdoc}
    */
-  protected $namespace = 'Plugin\\FormAlter';
-
-  /**
-   * {@inheritdoc}
-   */
-  protected $interface = 'Drupal\\objectify_form\\Plugin\\FormAlter\\FormAlterInterface';
-
-  /**
-   * {@inheritdoc}
-   */
   public function registerClass(\ReflectionClass $class, $extension, $type) {
     $form_ids = call_user_func([$class->getName(), 'formIds']);
     if (!$form_ids || !is_array($form_ids)) {
@@ -73,7 +63,7 @@ class FormAlterPluginLoader extends FormPluginLoader {
   protected function loadPlugins($plugins) {
     $loaded = [];
     foreach ($plugins as $class) {
-      $loaded[$class->getName()] = $this->loader->initialiseInstanceOfClassByLocatingDependencies($class, $this->container);
+      $loaded[$class->getName()] = $this->locator->initialiseInstanceOfClassByLocatingDependencies($class, $this->container);
     }
     return $loaded;
   }

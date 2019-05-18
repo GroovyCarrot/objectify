@@ -5,25 +5,13 @@ namespace Drupal\objectify_block;
 use Drupal\objectify_block\Exception\NonExistentBlockPluginException;
 use Drupal\objectify_block\Plugin\Block\BlockAutoPluginInterface;
 use Drupal\objectify_block\Plugin\Block\BlockInterface;
-use Drupal\objectify_di\PluginContainerDependencyLocatorInterface;
 use Drupal\objectify_di\Psr4PluginLoader;
-use Symfony\Component\DependencyInjection\ContainerBuilder;
 
 /**
  * Class BlockPluginLoader
  * @package Drupal\objectify_block
  */
 class BlockPluginLoader extends Psr4PluginLoader {
-
-  /**
-   * {@inheritdoc}
-   */
-  protected $namespace = 'Plugin\\Block';
-
-  /**
-   * {@inheritdoc}
-   */
-  protected $interface = 'Drupal\\objectify_block\\Plugin\\Block\\BlockInterface';
 
   /**
    * Internal storage for class mappings.
@@ -38,33 +26,6 @@ class BlockPluginLoader extends Psr4PluginLoader {
    * @var array
    */
   protected $autowire = [];
-
-  /**
-   * Dependency injection container.
-   *
-   * @var ContainerBuilder
-   */
-  protected $container;
-
-  /**
-   * Plugin dependency location service.
-   *
-   * @var PluginContainerDependencyLocatorInterface
-   */
-  protected $locator;
-
-  /**
-   * BlockPluginLoader constructor.
-   *
-   * @param ContainerBuilder $container
-   * @param PluginContainerDependencyLocatorInterface $locator
-   */
-  public function __construct(ContainerBuilder $container,
-                              PluginContainerDependencyLocatorInterface $locator) {
-    $this->container = $container;
-    $this->locator = $locator;
-    parent::__construct();
-  }
 
   /**
    * {@inheritdoc}

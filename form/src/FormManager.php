@@ -1,10 +1,8 @@
 <?php
-/**
- * @file
- * FormManager class implementation.
- */
 
 namespace Drupal\objectify_form;
+
+use Drupal\objectify_form\Form\FormBuilderInterface;
 
 /**
  * Class FormManager
@@ -54,13 +52,14 @@ class FormManager {
   public function getFormCallbacks($form_id, $args) {
     $forms = [];
 
-    foreach ($this->formPluginLoader->getPlugins() as $_form_id => $class) {
+    /** @var FormBuilderInterface $plugin */
+    foreach ($this->formPluginLoader->getPlugins() as $plugin) {
       $form_definition = [
         'callback' => 'objectify_form_load_form',
-        'callback arguments' => [$class->getName()],
+        'callback arguments' => [get_class($plugin)],
       ];
 
-      $forms[$_form_id] = $form_definition;
+      $forms[$plugin::formId()] = $form_definition;
     }
 
     return $forms;

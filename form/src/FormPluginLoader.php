@@ -14,8 +14,6 @@ namespace Drupal\objectify_form;
 
 use Drupal\objectify_form\Form\FormBuilderInterface;
 use Drupal\objectify_di\Psr4PluginLoader;
-use Drupal\objectify_di\PluginContainerDependencyLocatorInterface;
-use Symfony\Component\DependencyInjection\ContainerBuilder;
 
 /**
  * Class FormPluginLoader
@@ -23,59 +21,25 @@ use Symfony\Component\DependencyInjection\ContainerBuilder;
  */
 class FormPluginLoader extends Psr4PluginLoader {
 
-  /**
-   * {@inheritdoc}
-   */
-  protected $namespace = 'Form';
-
-  /**
-   * {@inheritdoc}
-   */
-  protected $interface = 'Drupal\\objectify_form\\Form\\FormBuilderInterface';
-
-  /**
-   * @var \ReflectionClass[]
-   */
-  protected $plugins = [];
-
-  /**
-   * Dependency injection container.
-   *
-   * @var ContainerBuilder
-   */
-  protected $container;
-
-  /**
-   * Plugin dependency loader.
-   *
-   * @var PluginContainerDependencyLocatorInterface
-   */
-  protected $loader;
-
-  /**
-   * FormPluginLoader constructor.
-   *
-   * @param ContainerBuilder $container
-   * @param PluginContainerDependencyLocatorInterface $locator
-   */
-  public function __construct(ContainerBuilder $container,
-                              PluginContainerDependencyLocatorInterface $locator) {
-    $this->container = $container;
-    $this->loader = $locator;
-    parent::__construct();
-  }
+  /** @var \ReflectionClass[] keyed by form id */
+  protected $formIdClassMap = [];
 
   /**
    * {@inheritdoc}
    */
   public function registerClass(\ReflectionClass $class, $extension, $type) {
-    $class_name = $class->getName();
-    $this->plugins[$class_name] = $class;
-
-    $form_id = call_user_func([$class_name, 'formId']);
+    parent::registerClass($class, $extension, $type);
+    $form_id = call_user_func([$class->getName(), 'formId']);
     if ($form_id) {
-      $this->plugins[$form_id] = $class;
+      $this->formIdClassMap[$form_id] = $class;
     }
+  }
+
+  /**
+   * @return string[]
+   */
+  public function getRegisteredFormIds() {
+    return array_keys($this->formIdClassMap);
   }
 
   /**
@@ -84,19 +48,16 @@ class FormPluginLoader extends Psr4PluginLoader {
    * @return FormBuilderInterface
    */
   public function getPluginsForFormId($form_id) {
-    if (!isset($this->plugins[$form_id])) {
-      throw new \InvalidArgumentException("Unable to load non-existent plugin for {$form_id}");
+    if (!$this->classRegistrationCompleted) {
+      $this->registerClassesForModulesInPsr4Namespace();
     }
 
-    $class = $this->plugins[$form_id];
-    return $this->loader->initialiseInstanceOfClassByLocatingDependencies($class, $this->container);
+    if (isset($this->formIdClassMap[$form_id])) {
+      $class = $this->formIdClassMap[$form_id];
+      return $this->getPlugin($class->getName());
+    }
+    else {
+      return $this->getPlugin($form_id);
+    }
   }
-
-  /**
-   * {@inheritdoc}
-   */
-  public function getPlugins() {
-    return $this->plugins;
-  }
-
 }

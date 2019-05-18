@@ -1,10 +1,8 @@
 <?php
-/**
- * @file
- * BlockManager class implementation.
- */
 
 namespace Drupal\objectify_menu;
+
+use Drupal\objectify_di\Psr4PluginLoader;
 
 /**
  * Class MenuRouteManager
@@ -15,16 +13,16 @@ class MenuRouteManager {
   /**
    * Plugin loader for menu routes.
    *
-   * @var MenuRoutePluginLoader
+   * @var Psr4PluginLoader
    */
   protected $menuRouterPluginLoader;
 
   /**
    * MenuRouteManager constructor.
    *
-   * @param MenuRoutePluginLoader $router_plugin_loader
+   * @param Psr4PluginLoader $router_plugin_loader
    */
-  public function __construct(MenuRoutePluginLoader $router_plugin_loader) {
+  public function __construct(Psr4PluginLoader $router_plugin_loader) {
     $this->menuRouterPluginLoader = $router_plugin_loader;
   }
 

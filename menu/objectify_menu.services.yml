@@ -1,9 +1,13 @@
 services:
   objectify_menu.plugin_loader:
-    class: Drupal\objectify_menu\MenuRoutePluginLoader
+    class: Drupal\objectify_di\Psr4PluginLoader
     arguments:
      - '@service_container'
      - '@objectify_di.plugin_dependency_loader'
+    calls:
+     - [setNamespace, ['Controller']]
+     - [setInterface, ['Drupal\objectify_menu\Controller\MenuRouteControllerInterface']]
+
 
   objectify_menu.manager:
     class: Drupal\objectify_menu\MenuRouteManager

@@ -4,6 +4,9 @@ services:
     arguments:
      - '@service_container'
      - '@objectify_di.plugin_dependency_loader'
+    calls:
+     - [setNamespace, ['Plugin\Block']]
+     - [setInterface, ['Drupal\objectify_block\Plugin\Block\BlockInterface']]
 
   objectify_block.manager:
     class: Drupal\objectify_block\BlockManager

@@ -4,12 +4,18 @@ services:
     arguments:
      - '@service_container'
      - '@objectify_di.plugin_dependency_loader'
+    calls:
+     - [setNamespace, ['Form']]
+     - [setInterface, ['Drupal\objectify_form\Form\FormBuilderInterface']]
 
   objectify_form.alter_plugin_loader:
     class: Drupal\objectify_form\FormAlterPluginLoader
     arguments:
      - '@service_container'
      - '@objectify_di.plugin_dependency_loader'
+    calls:
+     - [setNamespace, ['Plugin\FormAlter']]
+     - [setInterface, ['Drupal\objectify_form\Plugin\FormAlter\FormAlterInterface']]
 
   objectify_form.id_locator:
     class: Drupal\objectify_form\FormIdLocator

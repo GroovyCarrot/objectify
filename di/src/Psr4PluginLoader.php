@@ -6,11 +6,13 @@
 
 namespace Drupal\objectify_di;
 
+use Symfony\Component\DependencyInjection\ContainerBuilder;
+
 /**
  * Class PluginLoader
  * @package Drupal\objectify_di
  */
-abstract class Psr4PluginLoader implements PluginLoaderInterface {
+class Psr4PluginLoader implements PluginLoaderInterface {
 
   /**
    * Interface to load plugins for.
@@ -34,21 +36,79 @@ abstract class Psr4PluginLoader implements PluginLoaderInterface {
   protected $plugins = [];
 
   /**
-   * PluginLoader constructor.
+   * Dependency injection container.
+   *
+   * @var ContainerBuilder
    */
-  public function __construct() {
+  protected $container;
+  /** @var PluginContainerDependencyLocatorInterface */
+  protected $locator;
+  /** @var \ReflectionClass[] */
+  protected $registeredClasses;
+  /** @var bool */
+  protected $classRegistrationCompleted = FALSE;
+
+  /**
+   * @param ContainerBuilder $container
+   * @param PluginContainerDependencyLocatorInterface $locator
+   * @throws \Exception
+   */
+  public function __construct(ContainerBuilder $container, PluginContainerDependencyLocatorInterface $locator) {
+    $this->container = $container;
+    $this->locator = $locator;
+
+  }
+
+  /**
+   * @param string $interface
+   */
+  public function setInterface($interface) {
+    $this->interface = $interface;
+  }
+
+  /**
+   * @param string $namespace
+   */
+  public function setNamespace($namespace) {
+    $this->namespace = $namespace;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function getPlugins() {
+    foreach ($this->getRegisteredClasses() as $class => $reflectionClass) {
+      $this->getPlugin($class);
+    }
+
+    return $this->plugins;
+  }
+
+  /**
+   * @return \ReflectionClass[]
+   */
+  private function getRegisteredClasses() {
+    if (!$this->classRegistrationCompleted) {
+      $this->registerClassesForModulesInPsr4Namespace();
+    }
+    return $this->registeredClasses;
+  }
+
+  /**
+   * @throws \Exception
+   */
+  protected function registerClassesForModulesInPsr4Namespace() {
     if ($this->namespace === NULL) {
       throw new \Exception('Cannot load plugins for NULL namespace.');
     }
 
-    $this->registerClassesForModulesInPsr4Namespace();
-  }
-
-  /**
-   * Register classes to the plugin loader.
-   */
-  protected function registerClassesForModulesInPsr4Namespace() {
-    $cid = get_class($this) . '::registerClassesForModulesInPsr4Namespace';
+    $cid = [
+      get_class($this),
+      'registerClassesForModulesInPsr4Namespace',
+      $this->namespace,
+      $this->interface,
+    ];
+    $cid = implode('.', $cid);
 
     $classes = [];
 
@@ -99,6 +159,8 @@ abstract class Psr4PluginLoader implements PluginLoaderInterface {
 
       $this->registerClass($reflection, $data['extension'], $data['type']);
     }
+
+    $this->classRegistrationCompleted = TRUE;
   }
 
   /**
@@ -130,6 +192,66 @@ abstract class Psr4PluginLoader implements PluginLoaderInterface {
    */
   protected function getPsr4NamespacePath() {
     return '/src/' . str_replace('\\', '/', $this->namespace);
+  }
+
+  /**
+   * @param \ReflectionClass $class
+   * @param $extension
+   * @param $type
+   */
+  protected function registerClass(\ReflectionClass $class, $extension, $type) {
+    $class_name = $class->getName();
+    $this->registeredClasses[$class_name] = $class;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function getPlugin($class) {
+    if ($this->classIsRegistered($class) && !$this->hasPlugin($class)) {
+      $this->plugins[$class] = $this->instantiatePlugin($class);
+    }
+    return $this->plugins[$class];
+  }
+
+  /**
+   * @param string $class
+   * @return bool
+   */
+  private function classIsRegistered($class) {
+    $registeredClasses = $this->getRegisteredClasses();
+    return isset($registeredClasses[$class]);
+  }
+
+  /**
+   * @param string $class
+   * @return bool
+   */
+  private function hasPlugin($class) {
+    return isset($this->plugins[$class]);
+  }
+
+  /**
+   * @param $class
+   * @return object
+   * @throws \Drupal\objectify_di\UnknownPluginException
+   */
+  private function instantiatePlugin($class) {
+    if ($this->classIsRegistered($class)) {
+      return $this->locator->initialiseInstanceOfClassByLocatingDependencies($this->getClassFromRegistry($class), $this->container);
+    }
+    else {
+      throw new UnknownPluginException("Plugin '{$class}' is unknown to the system.");
+    }
+  }
+
+  /**
+   * @param string $class
+   * @return \ReflectionClass
+   */
+  private function getClassFromRegistry($class) {
+    $registeredClasses = $this->getRegisteredClasses();
+    return $registeredClasses[$class];
   }
 
 }
